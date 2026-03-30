@@ -1,0 +1,59 @@
+{
+  "info": {
+    "name": "Biometric Auth API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8000" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/health"
+      }
+    },
+    {
+      "name": "Register",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "email", "value": "user@example.com", "type": "text" },
+            { "key": "password", "value": "password123", "type": "text" },
+            {
+              "key": "fingerprint",
+              "type": "file",
+              "src": "/path/to/your/fingerprint.png"
+            }
+          ]
+        },
+        "url": "{{baseUrl}}/register"
+      }
+    },
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "email", "value": "user@example.com", "type": "text" },
+            { "key": "password", "value": "password123", "type": "text" },
+            {
+              "key": "fingerprint",
+              "type": "file",
+              "src": "/path/to/your/fingerprint.png"
+            }
+          ]
+        },
+        "url": "{{baseUrl}}/login"
+      }
+    }
+  ]
+}

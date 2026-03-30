@@ -1,0 +1,28 @@
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DB_NAME: biometric_auth
+      FERNET_KEY: ${FERNET_KEY}
+      JWT_SECRET: ${JWT_SECRET:-dev-change-me-use-long-secret}
+      FINGERPRINT_MATCH_THRESHOLD: ${FINGERPRINT_MATCH_THRESHOLD:-30}
+      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+    depends_on:
+      - mongo
+
+volumes:
+  mongo_data:
