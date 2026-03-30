@@ -30,7 +30,7 @@ export type MismatchData = {
 export async function registerUser(
   email: string,
   password: string,
-  fingerprintFile: File
+  fingerprintFile: File,
 ): Promise<ApiEnvelope> {
   const form = new FormData();
   form.append("email", email);
@@ -44,20 +44,27 @@ export async function registerUser(
 export async function loginUser(
   email: string,
   password: string,
-  fingerprintFile: File
+  fingerprintFile: File,
 ): Promise<ApiEnvelope<LoginSuccessData & MismatchData>> {
   const form = new FormData();
   form.append("email", email);
   form.append("password", password);
   form.append("fingerprint", fingerprintFile);
 
-  const { data } = await api.post<ApiEnvelope<LoginSuccessData & MismatchData>>("/login", form);
+  const { data } = await api.post<ApiEnvelope<LoginSuccessData & MismatchData>>(
+    "/login",
+    form,
+  );
   return data;
 }
 
 export function getErrorMessage(err: unknown): string {
   const ax = err as AxiosError<ApiEnvelope>;
-  if (ax.response?.data && typeof ax.response.data === "object" && "message" in ax.response.data) {
+  if (
+    ax.response?.data &&
+    typeof ax.response.data === "object" &&
+    "message" in ax.response.data
+  ) {
     return String((ax.response.data as ApiEnvelope).message);
   }
   if (ax.message) return ax.message;
