@@ -10,8 +10,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.database.db import close_db, connect_db, get_database
+from app.models.login_attempt_model import LOGIN_ATTEMPTS_COLLECTION, login_attempt_indexes
 from app.models.user_model import USERS_COLLECTION, user_indexes
 from app.routes.auth import router as auth_router
+from app.routes.analytics import router as analytics_router
 
 logging.basicConfig(
     level=logging.INFO,
@@ -27,6 +29,8 @@ async def lifespan(app: FastAPI):
     db = get_database()
     for keys, kwargs in user_indexes():
         await db[USERS_COLLECTION].create_index(list(keys.keys()), **kwargs)
+    for keys, kwargs in login_attempt_indexes():
+        await db[LOGIN_ATTEMPTS_COLLECTION].create_index(list(keys.keys()), **kwargs)
     logger.info("App started; CORS origins: %s", settings.cors_origins)
     yield
     await close_db()
@@ -45,6 +49,7 @@ app.add_middleware(
 )
 
 app.include_router(auth_router)
+app.include_router(analytics_router)
 
 
 @app.get("/")

@@ -9,6 +9,7 @@ from jose import JWTError, jwt
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.config import Settings
+from app.models.login_attempt_model import LOGIN_ATTEMPTS_COLLECTION, LoginAttemptInDB
 from app.models.user_model import USERS_COLLECTION, UserDocument
 from app.services.encryption import EncryptionService
 from app.services.fingerprint import FingerprintService
@@ -29,6 +30,7 @@ class AuthService:
         self._encryption = encryption
         self._fingerprint = fingerprint
         self._users = db[USERS_COLLECTION]
+        self._attempts = db[LOGIN_ATTEMPTS_COLLECTION]
 
     @staticmethod
     def hash_password(plain: str) -> str:
@@ -97,11 +99,32 @@ class AuthService:
 
     async def login(self, email: str, password: str, fingerprint_bytes: bytes) -> dict[str, Any]:
         email_norm = email.strip().lower()
+        threshold = float(self._settings.fingerprint_match_threshold)
+        now = datetime.now(timezone.utc)
+
         user = await self._users.find_one({UserDocument.EMAIL: email_norm})
         if not user:
+            await self._attempts.insert_one(
+                LoginAttemptInDB(
+                    email=email_norm,
+                    match_score=None,
+                    threshold=threshold,
+                    success=False,
+                    timestamp=now,
+                ).model_dump()
+            )
             return {"ok": False, "error": "invalid_credentials", "message": "Invalid email or password"}
 
         if not self.verify_password(password, user[UserDocument.PASSWORD_HASH]):
+            await self._attempts.insert_one(
+                LoginAttemptInDB(
+                    email=email_norm,
+                    match_score=None,
+                    threshold=threshold,
+                    success=False,
+                    timestamp=now,
+                ).model_dump()
+            )
             return {"ok": False, "error": "invalid_credentials", "message": "Invalid email or password"}
 
         try:
@@ -129,22 +152,40 @@ class AuthService:
         else:
             score = self._fingerprint.match_score(plain_stored, fingerprint_bytes)
 
-        threshold = self._settings.fingerprint_match_threshold
-        if score < threshold:
+        score_f = float(score)
+        if score_f < threshold:
+            await self._attempts.insert_one(
+                LoginAttemptInDB(
+                    email=email_norm,
+                    match_score=score_f,
+                    threshold=threshold,
+                    success=False,
+                    timestamp=now,
+                ).model_dump()
+            )
             return {
                 "ok": False,
                 "error": "fingerprint_mismatch",
                 "message": "Fingerprint does not match enrolled template",
-                "match_score": score,
+                "match_score": score_f,
                 "threshold": threshold,
             }
 
         token = self.create_access_token(email_norm)
+        await self._attempts.insert_one(
+            LoginAttemptInDB(
+                email=email_norm,
+                match_score=score_f,
+                threshold=threshold,
+                success=True,
+                timestamp=now,
+            ).model_dump()
+        )
         return {
             "ok": True,
             "message": "Login successful",
             "access_token": token,
             "token_type": "bearer",
-            "match_score": score,
+            "match_score": score_f,
             "threshold": threshold,
         }
