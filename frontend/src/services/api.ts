@@ -27,6 +27,45 @@ export type MismatchData = {
   threshold?: number;
 };
 
+export type AnalyticsSummary = {
+  total_attempts: number;
+  successful_logins: number;
+  failed_logins: number;
+  average_match_score: number | null;
+  far: number;
+  frr: number;
+  success_rate: number;
+};
+
+export type AnalyticsDistribution = {
+  match_scores: number[];
+  thresholds: number[];
+};
+
+export type ConfidenceLevel = "Low" | "Medium" | "High";
+
+export type LoginAttempt = {
+  email: string;
+  match_score: number | null;
+  threshold: number | null;
+  success: boolean;
+  timestamp: string;
+  confidence: ConfidenceLevel | null;
+};
+
+export type TrendPoint = {
+  timestamp: string;
+  match_score: number;
+  threshold: number;
+  confidence: ConfidenceLevel;
+};
+
+export type UserAnalytics = {
+  email: string;
+  attempts: LoginAttempt[];
+  trend: TrendPoint[];
+};
+
 export async function registerUser(
   email: string,
   password: string,
@@ -55,6 +94,21 @@ export async function loginUser(
     "/login",
     form,
   );
+  return data;
+}
+
+export async function getAnalyticsSummary(): Promise<AnalyticsSummary> {
+  const { data } = await api.get<AnalyticsSummary>("/analytics/summary");
+  return data;
+}
+
+export async function getAnalyticsDistribution(): Promise<AnalyticsDistribution> {
+  const { data } = await api.get<AnalyticsDistribution>("/analytics/distribution");
+  return data;
+}
+
+export async function getUserAnalytics(email: string): Promise<UserAnalytics> {
+  const { data } = await api.get<UserAnalytics>(`/analytics/user/${encodeURIComponent(email)}`);
   return data;
 }
 

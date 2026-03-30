@@ -9,6 +9,7 @@ export default defineConfig({
       "/register": { target: "http://127.0.0.1:8000", changeOrigin: true },
       "/login": { target: "http://127.0.0.1:8000", changeOrigin: true },
       "/health": { target: "http://127.0.0.1:8000", changeOrigin: true },
+      "/analytics": { target: "http://127.0.0.1:8000", changeOrigin: true },
     },
   },
 });
